@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BST Visualization</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+      background: linear-gradient(to bottom right, #e6f7ff, #b3e0ff);
+    }
+
+    h1 {
+      color: #004d99;
+      font-size: 36px;
+      margin-top: 20px;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      margin-top: 50px;
+    }
+
+    .section {
+      width: 50%;
+    }
+
+    svg {
+      background-color: #f0f5ff;
+      width: 100%;
+      height: 500px;
+      border-radius: 15px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border: 2px solid #0073e6;
+    }
+
+    .controls {
+      margin: 20px 0;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #004d99;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #0073e6;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #005bb5;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-20px);
+      }
+    }
+
+    .highlight circle, .highlight text {
+      animation: bounce 0.75s ease;
+      animation-iteration-count: 2;
+    }
+
+    .highlight text {
+      fill: rgb(214, 6, 148);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Binary Search Tree (BST) Visualization</h1>
+  
+  <div class="container">
+    <div class="section">
+      <div class="controls">
+        <input type="number" id="value" placeholder="Enter a number" />
+        <button onclick="insert()">Insert</button>
+        <button onclick="remove()">Delete</button>
+        <button onclick="search()">Search</button>
+        <button onclick="resetBST()">Reset BST</button>
+      </div>
+      <div class="bst-container">
+        <svg id="bst"></svg>
+      </div>
+    </div>
+  </div>  
+
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script>
+    class Node {
+      constructor(data) {
+        this.data = data;
+        this.left = null;
+        this.right = null;
+      }
+    }
+
+    class BST {
+      constructor() {
+        this.root = null;
+      }
+
+      insert(data) {
+        const newNode = new Node(data);
+        if (this.root === null) {
+          this.root = newNode;
+        } else {
+          this.insertNode(this.root, newNode);
+        }
+        return newNode;
+      }
+
+      insertNode(node, newNode) {
+        if (newNode.data < node.data) {
+          if (node.left === null) {
+            node.left = newNode;
+          } else {
+            this.insertNode(node.left, newNode);
+          }
+        } else {
+          if (node.right === null) {
+            node.right = newNode;
+          } else {
+            this.insertNode(node.right, newNode);
+          }
+        }
+      }
+
+      searchWithPath(node, data, path = []) {
+        if (node === null) return { found: false, path };
+        path.push(node);
+        if (data < node.data) return this.searchWithPath(node.left, data, path);
+        if (data > node.data) return this.searchWithPath(node.right, data, path);
+        return { found: true, path };
+      }
+
+      removeNode(node, key) {
+        if (node === null) return null;
+        if (key < node.data) {
+          node.left = this.removeNode(node.left, key);
+          return node;
+        } else if (key > node.data) {
+          node.right = this.removeNode(node.right, key);
+          return node;
+        } else {
+          if (node.left === null && node.right === null) {
+            return null;
+          }
+          if (node.left === null) return node.right;
+          if (node.right === null) return node.left;
+          const aux = this.findMinNode(node.right);
+          node.data = aux.data;
+          node.right = this.removeNode(node.right, aux.data);
+          return node;
+        }
+      }
+
+      findMinNode(node) {
+        return node.left === null ? node : this.findMinNode(node.left);
+      }
+    }
+
+    const bst = new BST();
+    const svg = d3.select("#bst").attr("width", 800).attr("height", 500);
+    const width = +svg.attr("width");
+    const height = +svg.attr("height");
+    let lastInsertedNode = null;
+    let currentMode = null; // <- เพิ่มตรงนี้
+
+    function updateBST(currentHighlight = null) {
+    svg.selectAll("*").remove();
+    drawTree(bst.root, width / 2.5, 80, 80, width / 8, currentHighlight);
+}
+
+
+    function drawTree(node, x, y, levelGap, widthGap, currentHighlight) {
+      if (!node) return;
+
+      if (node.left) {
+        svg.append("line")
+          .attr("x1", x)
+          .attr("y1", y)
+          .attr("x2", x)
+          .attr("y2", y)
+          .attr("stroke", "black")
+          .transition()
+          .duration(1000)
+          .attr("x2", x - widthGap)
+          .attr("y2", y + levelGap);
+
+        drawTree(node.left, x - widthGap, y + levelGap, levelGap, widthGap / 2, currentHighlight);
+      }
+
+      if (node.right) {
+        svg.append("line")
+          .attr("x1", x)
+          .attr("y1", y)
+          .attr("x2", x)
+          .attr("y2", y)
+          .attr("stroke", "black")
+          .transition()
+          .duration(1000)
+          .attr("x2", x + widthGap)
+          .attr("y2", y + levelGap);
+
+        drawTree(node.right, x + widthGap, y + levelGap, levelGap, widthGap / 2, currentHighlight);
+      }
+
+      const nodeGroup = svg.append("g")
+        .attr("class", node === currentHighlight ? "highlight" : "")
+        .attr("transform", `translate(${x}, ${y})`);
+
+      nodeGroup.append("circle")
+        .attr("r", 0)
+        .attr("fill", "lightblue")
+        .transition()
+        .duration(500)
+        .attr("r", 20);
+
+      nodeGroup.append("text")
+        .attr("dy", 5)
+        .attr("text-anchor", "middle")
+        .attr("font-size", "15px")
+        .attr("fill", "black")
+        .text(node.data)
+        .style("opacity", 0)
+        .transition()
+        .duration(500)
+        .style("opacity", 1);
+    }
+
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function animateSearchPath(path) {
+      for (const node of path) {
+        updateBST(node);
+        await delay(700);
+      }
+    }
+
+    function insert() {
+    const value = +document.getElementById("value").value;
+    lastInsertedNode = bst.insert(value);
+    currentMode = "insert"; // <- เพิ่มตรงนี้
+    updateBST(lastInsertedNode);
+    }
+
+    async function search() {
+    const value = +document.getElementById("value").value;
+    currentMode = "search"; // <- เพิ่มตรงนี้
+    const { found, path } = bst.searchWithPath(bst.root, value);
+    await animateSearchPath(path);
+    if (found) {
+        updateBST(path[path.length - 1]);
+        alert(`Found ${value}`);
+    } else {
+        updateBST(); // เคลียร์ highlight
+        alert(`${value} not found`);
+    }
+    }
+
+
+    function remove() {
+      const value = +document.getElementById("value").value;
+      bst.root = bst.removeNode(bst.root, value);
+      updateBST();
+    }
+
+    function resetBST() {
+      bst.root = null;
+      updateBST();
+    }
+  </script>
+</body>
+</html>

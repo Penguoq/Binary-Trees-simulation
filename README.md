@@ -1,2 +1,1 @@
-# Binary-Trees-Simulation
-# Binary-Trees-Simulation
+This is only the project of my second year in the university.I was building to make me understand how the Binarytrees work from the textbook in the class,somehow u guys can use this to be your guide for learning about the basics of Binary trees.
